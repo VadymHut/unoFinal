@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UNO Match</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="uno-scripts.js" defer></script>
+
+    
+    <link rel="stylesheet" href="uno-theme.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        
+        html, body { height: 100%; margin: 0; }
+        body {
+            background-color: #121212;
+            color: #f1f1f1;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+        }
+
+        #gameBoard {
+            min-height: 100vh;
+        }
+
+        #opponentHandRow,
+        #hand {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 0;
+        }
+        #opponentHandRow { min-height: 170px; }
+        #hand             { min-height: 200px; }
+
+        #opponentHandRow img {
+            height: 150px;
+            width: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 6px rgba(255,255,255,.25);
+        }
+        #hand img {
+            height: 170px;
+            width: auto;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform .2s ease;
+            box-shadow: 0 0 12px rgba(255,77,77,.45);
+        }
+        #hand img:hover { transform: scale(1.06); }
+
+        #cardTurnRow {
+            flex: 1 0 auto;
+            gap: 12rem;
+        }
+        #topCard img {
+            height: 200px;
+            width: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 18px rgba(255,255,255,.25);
+        }
+
+        #leftIcon img,
+        #statusBarContainer img {
+            height: 220px;
+            width: auto;
+            filter: drop-shadow(0 0 4px rgba(255,255,255,.25));
+        }
+
+        .btn {
+            margin: 8px;
+            padding: 12px 20px;
+            font-size: 1.15rem;
+            border-radius: 12px;
+            min-width: 150px;
+        }
+        .btn-warning {
+            background-color: #f39c12;
+            color: #000;
+            border: none;
+        }
+        .btn-warning:hover { background-color: #d68910; }
+        .btn-danger  { background-color: #ff4d4d; border: none; }
+        .btn-danger:hover  { background-color: #c0392b; }
+
+        @keyframes bulbPulse {
+            0%,100% { transform: scale(1);   opacity:.9; }
+            50%     { transform: scale(1.1); opacity:1; }
+        }
+        .bulb-animate { animation: bulbPulse 1.2s ease-in-out; }
+
+        .player-info{
+            font-weight:600;
+            font-size:1rem;
+            color:#f8c291;
+            margin-top:4px;
+        }
+
+        #opponentInfo{
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        #yourInfo
+        {
+            margin-bottom: -10px;
+        }
+
+        #hand img,
+        #opponentHandRow img {
+            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #hand img:hover {
+            transform: scale(1.06);
+            box-shadow: 0 0 16px rgba(255, 255, 255, 0.6);
+        }
+
+        #topCard img {
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        #topCard img:hover {
+            transform: scale(1.03);
+        }
+
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeInCard 0.4s forwards;
+        }
+
+        @keyframes fadeInCard {
+            to { opacity: 1; }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.25s forwards;
+        }
+        .fade-in {
+            animation: fadeIn 0.25s forwards;
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: scale(0.95); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to   { opacity: 1; transform: scale(1);    }
+        }
+
+        #bulb {
+            transition: filter 0.4s ease, transform 0.4s ease;
+        }
+
+        #turnIndicator {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+        }
+        #turnIndicator.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        #turnIndicator.hidden {
+            transform: translateY(-10px);
+        }
+
+        .disabled-card {
+            filter: grayscale(80%);
+            opacity: 0.6;
+            cursor: default !important;
+            pointer-events: none;
+            transition: filter .3s ease, opacity .3s ease;
+        }
+
+    </style>
+</head>
+
+<body>
+<input id="jwt" type="hidden">
+<input id="code" type="hidden">
+
+<main id="gameBoard"
+      class="d-flex flex-column justify-content-between align-items-center">
+
+    <div id="opponentInfo" class="player-info"></div>
+    <div id="opponentHandRow"></div>
+
+    <div id="cardTurnRow"
+         class="d-flex align-items-center justify-content-center text-center">
+        <div id="leftIcon">
+            <img id="bulb" src="/images/bulb_red.png" alt="Lightbulb">
+        </div>
+
+        <div id="topCardContainer" class="d-flex flex-column align-items-center">
+            <div id="topCard"></div>
+        </div>
+
+        <div id="statusBarContainer">
+            <img id="turnIndicator"
+                 class="hidden"
+                 src="/images/YOURTURN.png"
+                 alt="Turn Indicator">
+        </div>
+    </div>
+
+    <div id="yourInfo" class="player-info"></div>
+    <div id="hand"></div>
+
+    <div class="d-flex justify-content-center flex-wrap mb-3">
+        <button class="btn btn-warning" onclick="drawCard()">Draw</button>
+        <button class="btn btn-danger"  onclick="callUno()">UNO!</button>
+    </div>
+</main>
+
+
+<script>
+    let stompClient = null;
+    let wsConnected = false;
+    let gameId = null;
+    let jwt = null;
+    let latestState = null;
+    let pollingInterval = null;
+
+    function swapImageWithFade(imgEl, newSrc) {
+        if (!imgEl || imgEl.src.endsWith(newSrc)) return;
+        imgEl.classList.add('fade-out');
+        imgEl.addEventListener('animationend', function handleFadeOut(e) {
+            if (e.animationName !== 'fadeOut') return;
+            imgEl.removeEventListener('animationend', handleFadeOut);
+
+            imgEl.src = newSrc;
+
+            imgEl.classList.remove('fade-out');
+            imgEl.classList.add('fade-in');
+            imgEl.addEventListener('animationend', function handleFadeIn(e2) {
+                if (e2.animationName !== 'fadeIn') return;
+                imgEl.removeEventListener('animationend', handleFadeIn);
+                imgEl.classList.remove('fade-in');
+            });
+        });
+    }
+
+
+    function decodeJwtPayload(token) {
+        try {
+            const payload = token.split('.')[1];
+            return JSON.parse(atob(payload));
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function log(msg) {
+        const time = new Date().toLocaleTimeString();
+        console.log(`[${time}] ${msg}`);
+    }
+
+    function setGameUIVisible(visible) {
+        ["topCard", "hand", "statusBar"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = visible ? 'block' : 'none';
+        });
+    }
+
+    function connectWebSocket() {
+        if (wsConnected || !jwt || jwt.length < 10) return;
+
+        const socket = new SockJS("/ws-sockjs?Authorization=Bearer%20" + encodeURIComponent(jwt));
+        stompClient = Stomp.over(socket);
+
+        const userId = decodeJwtPayload(jwt).sub || "unknown";
+        log(`🔌 Connecting WebSocket as ${userId}`);
+
+        stompClient.connect({ Authorization: "Bearer " + jwt }, frame => {
+            wsConnected = true;
+            log("WebSocket connected");
+
+            stompClient.subscribe("/user/queue/game", message => {
+                try {
+                    const state = JSON.parse(message.body);
+                    showState(state);
+                } catch (err) {
+                    log("Failed to parse state, retrying fetch");
+                    fetchState();
+                }
+            });
+
+            stompClient.subscribe("/user/queue/errors", message => {
+                log("Error: " + message.body);
+            });
+
+        }, err => {
+            log("WebSocket error, retrying in 3s...");
+            setTimeout(() => {
+                wsConnected = false;
+                connectWebSocket();
+            }, 3000);
+        });
+    }
+
+    function fetchState() {
+        const code = document.getElementById("code").value.trim();
+        fetch(`/api/games/state/${code}`, {
+            headers: { Authorization: "Bearer " + jwt }
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("403 or other error");
+                return res.json();
+            })
+            .then(data => {
+                gameId = data.gameId;
+                showState(data);
+                setGameUIVisible(true);
+                if (data.status === "WAITING") startPolling(code);
+            })
+            .catch(err => log("State fetch failed: " + err.message));
+    }
+
+    function startPolling(code) {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(() => {
+            fetch(`/api/games/state/${code}`, {
+                headers: { Authorization: "Bearer " + jwt }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status !== "WAITING") {
+                        showState(data);
+                        clearInterval(pollingInterval);
+                    }
+                });
+        }, 3000);
+    }
+
+    function showState(state) {
+        if (!state) return;
+        latestState = state;
+
+        const oppInfoEl  = document.getElementById("opponentInfo");
+        const yourInfoEl = document.getElementById("yourInfo");
+        if (oppInfoEl)
+            oppInfoEl.textContent  =
+                `${state.opponentUsername} • ${state.opponentElo}${state.ranked ? ' elo' : ' (unranked)'}`;
+        if (yourInfoEl)
+            yourInfoEl.textContent =
+                `${state.yourUsername} • ${state.yourElo}${state.ranked ? ' elo' : ' (unranked)'}`;
+
+        const isYourTurn  = state.currentSeat === state.yourSeat;
+        const statusTextEl = document.getElementById("statusText");
+        const turnImgEl = document.getElementById("turnIndicator");
+        if (turnImgEl) {
+            const newSrc = isYourTurn
+                ? "/images/YOURTURN.png"
+                : "/images/OPPTURN.png";
+
+            swapImageWithFade(turnImgEl, newSrc);
+
+            turnImgEl.classList.remove('hidden');
+            turnImgEl.classList.add('visible');
+        }
+
+        let statusMessage = isYourTurn ? "Your Turn" : "Opponent's Turn";
+        statusMessage    += ` | Opponent has ${state.opponentHandSize} card(s)`;
+        statusMessage    += state.ranked ? " | 🎖Ranked" : " | Unranked";
+
+        if (state.ranked) {
+            statusMessage += ` | Ranked | Elo: You ${state.yourElo}, Opponent ${state.opponentElo}`;
+        } else {
+            statusMessage += ` | Unranked`;
+        }
+
+        if (state.status === "FINISHED") {
+            const youWon = state.yourHand.length === 0;
+            const resultMsg = youWon ? "You won!" : "You lost!";
+            statusMessage += ` | 🏁 Game Over — ${resultMsg}`;
+
+            if (state.ranked && state.eloChange != null) {
+                const delta = state.eloChange;
+                const change = delta > 0 ? ` +${delta}` : delta < 0 ? ` ${delta}` : "";
+                if (change) statusMessage += ` | Elo Change: ${change}`;
+            }
+
+            Swal.fire({
+                icon: youWon ? 'success' : 'error',
+                title: resultMsg,
+                text: state.ranked ? `Elo: ${state.yourElo}` : '',
+                confirmButtonText: 'Return to Menu',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then(() => {
+                window.location.href = "index.html";
+            });
+        }
+
+        if (statusTextEl) statusTextEl.innerText = statusMessage;
+
+        const topCardDiv = document.getElementById("topCard");
+        if (topCardDiv) {
+            const newSrc = state.topCard
+                ? `/images/cards/${state.topCard.color}_${state.topCard.rank}.png`
+                : null;
+
+            let imgEl = topCardDiv.querySelector('img');
+            if (!imgEl && newSrc) {
+                imgEl = document.createElement('img');
+                topCardDiv.appendChild(imgEl);
+            }
+            if (newSrc) {
+                swapImageWithFade(imgEl, newSrc);
+            }
+        }
+
+        const handDiv = document.getElementById("hand");
+        if (handDiv) {
+            handDiv.innerHTML = "";
+            state.yourHand.forEach(card => {
+                const img = document.createElement("img");
+                const newSrc = `/images/cards/${card.color}_${card.rank}.png`;
+
+                img.title = `${card.color} ${card.rank}`;
+                img.src = newSrc
+
+                img.onclick = () => {
+                    if (isYourTurn && state.status !== "FINISHED") {
+                        playCard(card);
+                    }
+                };
+
+                if (isYourTurn) {
+                    img.classList.remove('disabled-card');
+                } else {
+                    img.classList.add('disabled-card');
+                }
+
+                handDiv.appendChild(img);
+
+                img.style.opacity = 0;
+                void img.offsetWidth;
+                img.classList.add('fade-in');
+            });
+
+        }
+
+        if (state.status !== "WAITING" && pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            log("⏹️ Stopped polling - game is in progress or finished.");
+        }
+
+        const opponentRow = document.getElementById("opponentHandRow");
+        if (opponentRow) {
+            opponentRow.innerHTML = "";
+
+            for (let i = 0; i < state.opponentHandSize; i++) {
+                const backImg = document.createElement("img");
+                backImg.src = "/images/cards/BACK.png";
+                backImg.alt = "Card Back";
+                backImg.style.opacity = 0;
+                backImg.style.transform = 'scale(0.95)';
+
+                opponentRow.appendChild(backImg);
+
+                void backImg.offsetWidth;
+                backImg.classList.add('fade-in');
+            }
+        }
+
+        const bulb = document.getElementById("bulb");
+        if (bulb && state.activeColor) {
+            const color = state.activeColor.toLowerCase();
+            const bulbPath = `/images/bulb_${color}.png`;
+
+            if (!bulb.src.endsWith(bulbPath)) {
+
+                swapImageWithFade(bulb, bulbPath);
+                bulb.classList.add("bulb-animate");
+            }
+        }
+    }
+
+    function playCard(card) {
+        if (!stompClient?.connected || latestState?.status === "FINISHED") return;
+
+        if (card.color === "WILD") {
+            Swal.fire({
+                title: 'Choose a color',
+                input: 'radio',
+                inputOptions: {
+                    RED: '<span style="color:#e74c3c;font-weight:bold;">RED</span>',
+                    GREEN: '<span style="color:#27ae60;font-weight:bold;">GREEN</span>',
+                    BLUE: '<span style="color:#3498db;font-weight:bold;">BLUE</span>',
+                    YELLOW: '<span style="color:#f1c40f;font-weight:bold;">YELLOW</span>'
+                },
+                inputValidator: (value) => {
+                    if (!value) return 'You must pick a color!';
+                },
+                confirmButtonText: 'Play Card',
+                customClass: {
+                    input: 'text-start'
+                },
+                showCancelButton: true,
+                cancelButtonText: 'Cancel',
+                focusConfirm: false,
+                allowOutsideClick: false
+            }).then(result => {
+                if (result.isConfirmed && result.value) {
+                    stompClient.send(`/app/game.${gameId}.move`, {}, JSON.stringify({
+                        type: "PLAY_CARD",
+                        card: card,
+                        chosenColor: result.value
+                    }));
+                }
+            });
+        } else {
+            stompClient.send(`/app/game.${gameId}.move`, {}, JSON.stringify({
+                type: "PLAY_CARD",
+                card: card,
+                chosenColor: null
+            }));
+        }
+    }
+
+
+    function drawCard() {
+        if (!stompClient?.connected || latestState?.status === "FINISHED") return;
+        stompClient.send(`/app/game.${gameId}.move`, {}, JSON.stringify({ type: "DRAW_CARD" }));
+    }
+
+    function callUno() {
+        if (!stompClient?.connected || latestState?.status === "FINISHED") return;
+        stompClient.send(`/app/game.${gameId}.move`, {}, JSON.stringify({ type: "CALL_UNO" }));
+    }
+
+    window.onload = () => {
+        const storedJwt = sessionStorage.getItem("jwt") || localStorage.getItem("jwt");
+        const code = new URLSearchParams(window.location.search).get("code");
+
+        const jwtInput = document.getElementById("jwt");
+        const codeInput = document.getElementById("code");
+
+        if (storedJwt) {
+            jwt = storedJwt;
+            if (jwtInput) jwtInput.value = jwt;
+            log("JWT restored from storage");
+        }
+
+        if (code) {
+            if (codeInput) codeInput.value = code;
+            log("Game code from URL: " + code);
+        }
+
+        if (jwt && code) {
+            connectWebSocket();
+            setTimeout(fetchState, 300);
+        } else {
+            log("No JWT or game code to load match");
+        }
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+body {
+  font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 30px;
+  background: #1e1e1e;
+  color: #fff;
+}
+
+h2, h3 {
+  color: #ff4d4d;
+  text-shadow: 1px 1px 2px #000;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header button {
+  margin: 8px 12px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: #fff;
+  border: 1px solid #ff4d4d;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+header button:hover {
+  background-color: #ff4d4d;
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+.section {
+  margin-top: 40px;
+  padding: 20px;
+  text-align: center;
+}
+
+.card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 5px;
+  width: 80px;
+  height: 120px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.card:hover {
+  transform: translateY(-10px) rotate(-2deg);
+  box-shadow: 0 8px 16px rgba(255, 77, 77, 0.3);
+}
+
+.card img {
+  width: 80px;
+  height: 120px;
+  display: block;
+  border-radius: 8px;
+  box-shadow: 2px 2px 6px #000;
+  transition: transform 0.3s ease-in-out;
+}
+
+.card img:hover {
+  transform: scale(1.05);
+}
+
+.label {
+  font-weight: bold;
+  color: #ff4d4d;
+}
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #c0392b;
+}
+
+.uno-button-red {
+  background: #ff4d4d;
+}
+
+.uno-button-red:hover {
+  background: #c0392b;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.history-table th,
+.history-table td {
+  border: 1px solid #ff4d4d;
+  padding: 10px;
+  text-align: center;
+  color: white;
+}
+
+.history-table th {
+  background-color: #2a2a2a;
+}
+
+input[type="password"],
+input[type="text"],
+input[type="email"] {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 5px;
+  background: #333;
+  color: white;
+}
+
+input#code {
+  max-width: 300px;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+#hand {
+  max-width: 100%;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#topCard {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  margin: 20px auto;
+  text-align: center;
+}
+
+#topCard img {
+  width: 100px;
+  height: 150px;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+#topCard img:hover {
+  transform: scale(1.05);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px 5px rgba(255, 77, 77, 0.8);
+}
+
+.glow-blue,
+.glow-green,
+.glow-yellow {
+  box-shadow: 0 0 15px 3px rgba(255, 77, 77, 0.4);
+}
+
+#registerMessage {
+  padding: 15px 20px;
+  margin: 20px auto;
+  max-width: 400px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: opacity 0.3s ease;
+}
+
+.success-message {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+#statusBar {
+  font-size: 1rem;
+  margin-top: 15px;
+  background-color: #2d2d2d;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(255, 77, 77, 0.3);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hidden {
+  display: none;
+}

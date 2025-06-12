@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UNO – Profile</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="uno-scripts.js" defer></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 600px;
+      padding: 2.5rem;
+      border-radius: 12px;
+      background-color: #2a2a2a;
+      box-shadow: 0 0 25px rgba(255, 77, 77, 0.3);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #ff4d4d;
+      text-shadow: 1px 1px 2px black;
+    }
+
+    .label {
+      font-weight: 600;
+      color: #ff4d4d;
+    }
+
+    .value {
+      color: white;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-group-custom {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 2rem;
+    }
+
+    .btn-secondary {
+      background-color: #444;
+      color: white;
+      border: 1px solid #888;
+    }
+
+    .btn-secondary:hover {
+      background-color: #555;
+    }
+
+    .btn-danger {
+      background-color: #ff4d4d;
+      border: none;
+    }
+
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+
+    .btn-warning {
+      background-color: #ffc107;
+      color: black;
+      border: none;
+    }
+
+    .btn-warning:hover {
+      background-color: #e0a800;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Profile</h2>
+  <div id="profileCard">Loading profile...</div>
+
+  <div class="btn-group-custom">
+    <button class="btn btn-warning" onclick="goToChangePassword()">Change Password</button>
+    <button class="btn btn-danger" onclick="logout()">Logout</button>
+    <button class="btn btn-secondary" onclick="goBack()">← Back to Main Page</button>
+  </div>
+</div>
+
+<script>
+  const jwt = sessionStorage.getItem("jwt");
+
+  function goBack() {
+    window.location.href = "index.html";
+  }
+
+  function goToChangePassword() {
+    window.location.href = "changepassword.html";
+  }
+
+  function fetchProfile() {
+    if (!jwt) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Not Logged In',
+        text: 'You must be logged in to view your profile.'
+      }).then(() => window.location.href = "index.html");
+      return;
+    }
+
+    fetch("/api/profile", {
+      headers: { Authorization: "Bearer " + jwt }
+    })
+            .then(res => {
+              if (!res.ok) throw new Error("Unauthorized");
+              return res.json();
+            })
+            .then(profile => {
+              const card = document.getElementById("profileCard");
+              card.innerHTML = `
+        <div><span class="label">Username:</span> <span class="value">${profile.username}</span></div>
+        <div><span class="label">User ID:</span> <span class="value">${profile.id}</span></div>
+        <div><span class="label">Elo:</span> <span class="value">${profile.elo}</span></div>
+        <div><span class="label">Win Rate:</span> <span class="value">${profile.winrate.toFixed(1)}%</span></div>
+      `;
+            })
+            .catch(err => {
+              Swal.fire({
+                icon: 'error',
+                title: 'Profile Error',
+                text: 'Failed to load profile. Please log in again.'
+              }).then(() => window.location.href = "index.html");
+            });
+  }
+
+  function logout() {
+    sessionStorage.removeItem("jwt");
+    localStorage.removeItem("jwt");
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Logged Out',
+      text: 'You have been logged out successfully.',
+      timer: 2000,
+      showConfirmButton: false
+    }).then(() => {
+      window.location.href = "index.html";
+    });
+  }
+
+  window.onload = fetchProfile;
+</script>
+
+</body>
+</html>
